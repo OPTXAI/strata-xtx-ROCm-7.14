@@ -1,0 +1,22 @@
+{
+ "description": "Standaard. xtx plus de gfx11-matrixcore-schakelaars uit upstream's Strix Halo-configuratie (prompt-attentie op WMMA, FP16 q/p, HC-upmix, gepadde strides), de bit-exacte GDN/CVEC-promptschakelaars die upstream voor gfx12 en gfx1151 standaard aanzet, en asynchrone/vertraagde expert-cache-updates. Gemeten op een RX 7900 XTX (Zen 3-CPU met AVX2, DDR4, IQ3_S): prompt +24% (7K) tot +48% (58K) t.o.v. xtx, ±2,3x t.o.v. stock bij 29-58K; decode gelijk (±89 tok/s). Rondt anders af dan het standaardpad; terug met: xtx-apply xtx --save.",
+ "inherits": "xtx",
+ "env": {
+  "STRATA_HIP_WMMA": "1",
+  "STRATA_PA_FAST": "1",
+  "STRATA_HC_UPMIX": "1",
+  "STRATA_PF_PAD": "1",
+  "STRATA_GDN_HEAD": "1",
+  "STRATA_GDN_PP": "2",
+  "STRATA_GDN_CONVL2": "1",
+  "STRATA_GDN_NOY": "1",
+  "STRATA_CVEC_FUSE": "1",
+  "STRATA_ADAPT_LAG": "2"
+ },
+ "args": [
+  [
+   "--adapt-async",
+   "1"
+  ]
+ ]
+}

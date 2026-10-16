@@ -1,0 +1,18 @@
+{
+ "description": "Conservatiever alternatief voor xtx-max: alleen schakelaars die upstream documenteert en die op gfx1100 gemeten zijn. Prompt-experts en FP16-projecties op de WMMA-matrixcores (4x RX 7900 XT, 0.1.41: prompt 756 -> 2.052 tok/s bij 4K, 1.722 -> 3.804 bij 32K, decode gelijk), grotere prefill-chunks voor lange prompts (#1389 op een 7900 XTX: +23% bij 74K), en een gesprekscache in RAM (coding-agent met 40K prefix: 28,1 s -> 1,0 s). Rondt anders af dan het standaardpad (niet bit-identiek), net als upstream's eigen snelle Strix Halo-config; korte prompts (< 4096 tokens) houden de standaard-numeriek. Gemeten op een RX 7900 XTX: prompt +46% (7K) tot +58% (58K) t.o.v. stock, decode gelijk.",
+ "env": {
+  "STRATA_PF_FUSED": "1",
+  "STRATA_PF_GEMM": "1",
+  "STRATA_PF_SWITCH_MIN_T": "4096"
+ },
+ "args": [
+  [
+   "--prefill",
+   "auto:32768"
+  ],
+  [
+   "--conversation-cache-mib",
+   "8192"
+  ]
+ ]
+}

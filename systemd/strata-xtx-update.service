@@ -1,0 +1,9 @@
+[Unit]
+Description=strata-xtx: upstream ophalen, patches opnieuw toepassen, bouwen, testen (met rollback)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ai/strata-xtx/bin/xtx-update.sh --auto
+TimeoutStartSec=3h

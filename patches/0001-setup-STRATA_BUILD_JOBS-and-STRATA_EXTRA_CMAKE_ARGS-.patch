@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: strata-xtx <strata-xtx@localhost>
+Date: Thu, 15 Oct 2026 00:00:00 +0000
+Subject: [PATCH] setup: STRATA_BUILD_JOBS and STRATA_EXTRA_CMAKE_ARGS for the
+ HIP engine build (strata-xtx)
+
+STRATA_BUILD_JOBS sets the compile parallelism (default stays cpu_count/2), so a
+dedicated LXC rebuilds after every upstream update on all its cores.
+STRATA_EXTRA_CMAKE_ARGS (shell-split) is appended to the HIP CMake definitions and
+recorded in engine/BUILD.json as extra_cmake: changing it triggers a rebuild.
+Unset, both leave setup's behaviour byte-identical.
+---
+ setup.py | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index 8bb6ef9b..f7213596 100644
+--- a/setup.py
++++ b/setup.py
+@@ -43,6 +43,7 @@ import ctypes
+ import glob
+ import hashlib
+ import json
++import shlex
+ import math
+ import os
+ import platform
+@@ -2975,7 +2976,10 @@ def build_engine_hip(gpu, llama, vision="none") -> Path:
+     archs = sorted(set(gpu.get("archs") or [gpu["arch"]]))
+     has_archs = set(archs) <= set(meta.get("archs", []))
+     floor = cpu_floor(cpu_info()[1])                     # "" on an AVX2 CPU: the normal engine
++    # strata-xtx: extra CMake definitions for the HIP build (STRATA_EXTRA_CMAKE_ARGS, shell-split); a change rebuilds
++    extra = shlex.split(os.environ.get("STRATA_EXTRA_CMAKE_ARGS", ""))
+     engine_ok = meta.get("backend") == "hip" and (eng / EXE).exists() and meta.get("src") == src and has_archs and \
++        (meta.get("extra_cmake") or []) == extra and \
+         (meta.get("isa_floor") or "") == floor and not stale_binary(eng / EXE)
+     vision_ok = vision == "none" or ((eng / VEXE).exists() and meta.get("vision_src") == vsrc)
+     if engine_ok and vision_ok:
+@@ -3004,14 +3008,15 @@ def build_engine_hip(gpu, llama, vision="none") -> Path:
+                  f"-DCMAKE_HIP_COMPILER={root / 'llvm' / 'bin' / 'clang++'}", f"-DCMAKE_HIP_COMPILER_ROCM_ROOT={root}",
+                  "-DCMAKE_PREFIX_PATH=" + ";".join([str(root), *libs]),
+                  f"-DCMAKE_HIP_FLAGS=--rocm-path={root} --rocm-device-lib-path={bitcode}",
+-                 f"-DSTRATA_GGML_DIR={llama}", *isa_floor_defs(floor, ROOT / "build-hip", meta)], None, "")
++                 f"-DSTRATA_GGML_DIR={llama}", *isa_floor_defs(floor, ROOT / "build-hip", meta), *extra], None, "")
+     if stale_binary(ROOT / "build-hip" / EXE):            # #2054: no stamp for a binary of another version
+         fail(f"the engine build finished without a new engine ({EXE} is version "
+              f"{binary_engine_version(ROOT / 'build-hip' / EXE)}, this source is {source_version()}): "
+              "the installed engine is left as it was", "delete the folder build-hip and run this again")
+     shutil.copy2(ROOT / "build-hip" / EXE, eng / EXE)
+     meta = {"source": "local-hip", "backend": "hip", "version": source_version(), "archs": archs, "vision": "none",
+-            "lib_dirs": dirs, "src": src, **({"isa_floor": floor} if floor else {})}
++            "lib_dirs": dirs, "src": src, **({"isa_floor": floor} if floor else {}),
++            **({"extra_cmake": extra} if extra else {})}
+     if vision != "none":
+         return build_vision_cpu(eng, stamp, meta, llama, vsrc)
+     stamp.write_text(json.dumps(meta, indent=1))
+@@ -3830,7 +3835,9 @@ def cmake_build(src, bdir, target, defs, vcvars, bat_name):
+         fail("cmake / ninja not found after installing them", "run: .venv python -m pip install cmake ninja")
+     conf = [cmake, "-G", "Ninja", f"-DCMAKE_MAKE_PROGRAM={ninja}", "-S", str(src), "-B", str(bdir),
+             "-DCMAKE_BUILD_TYPE=Release", *defs]
+-    build = [cmake, "--build", str(bdir), "--target", target, "-j", str(max(2, (os.cpu_count() or 4) // 2))]
++    jobs = os.environ.get("STRATA_BUILD_JOBS", "").strip()   # strata-xtx: all cores of a dedicated build box/LXC
++    jobs = jobs if jobs.isdigit() and int(jobs) > 0 else str(max(2, (os.cpu_count() or 4) // 2))
++    build = [cmake, "--build", str(bdir), "--target", target, "-j", jobs]
+     # A failed build is tried once more: CUDA 13.0's ptxas now and then fails to parse a PTX file it just wrote, and
+     # the same command then gets past it (issue #45); a second attempt only compiles what is still missing.
+     if WIN:
+-- 
+2.43.0
+
