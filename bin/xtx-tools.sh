@@ -36,6 +36,11 @@ say "toolchain installeren / bijwerken"
 apt-get install -y -qq --no-install-recommends "${PKGS[@]}" >/dev/null || die "apt-get install mislukte"
 # alleen de toolchain-pakketten upgraden (geen volledige dist-upgrade van de container)
 apt-get install -y -qq --only-upgrade "${PKGS[@]}" >/dev/null || warn "upgrade van een pakket mislukte"
+# ROCm uit AMD's apt-repo (apt-variant): kleine updates binnen dezelfde X.Y meenemen
+if [ "$ROCM_SOURCE" = apt ] && [ -n "$ROCM_APT" ] && [ "$ROCM_APT" != latest ]; then
+  mapfile -t rp < <(rocm_apt_pkgs "$ROCM_APT")
+  apt-get install -y -qq --only-upgrade "${rp[@]}" >/dev/null 2>&1 && ok "ROCm $ROCM_APT (apt) bijgewerkt" || warn "ROCm-apt-upgrade mislukte"
+fi
 # radeontop / amdgpu_top zijn handig voor live GPU-gebruik op een headless kaart
 apt-get install -y -qq radeontop >/dev/null 2>&1 || true
 

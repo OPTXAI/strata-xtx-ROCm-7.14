@@ -76,14 +76,29 @@ for c in $CONFLICTS; do   # RAM/GPU vrijmaken: een andere variant mag niet tegel
 done
 # mislukt de installatie, dan draait de andere variant gewoon weer
 trap 'rc=$?; if [ $rc -ne 0 ] && [ ${#STOPPED[@]} -gt 0 ]; then systemctl start "${STOPPED[@]}" && warn "${STOPPED[*]} weer gestart (installatie mislukt)"; fi' EXIT
-case "$ROCM_VERSION" in latest:*)
+if [ "$ROCM_SOURCE" = apt ]; then   # systeem-ROCm uit AMD's apt-repo (alleen de $GFX-pakketten)
+  say "ROCm uit AMD's apt-repo"
+  rocm_apt_repo || die "AMD's apt-repo toevoegen mislukte ($ROCM_APT_REPO)"
+  if [ -z "$ROCM_APT" ] || [ "$ROCM_APT" = latest ]; then
+    v=$(rocm_apt_latest); [ -n "$v" ] || die "geen amdrocm-core-dev*-$GFX in $ROCM_APT_REPO"
+    ROCM_APT=$v
+    if grep -q '^ROCM_APT=' "$XTX_CONF"; then sed -i "s/^ROCM_APT=.*/ROCM_APT=$v   # vastgezet bij installatie (was latest)/" "$XTX_CONF"
+    else echo "ROCM_APT=$v" >> "$XTX_CONF"; fi
+  fi
+  mapfile -t rp < <(rocm_apt_pkgs "$ROCM_APT")
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "${rp[@]}" >/dev/null \
+    || die "apt install ${rp[*]} mislukte"
+  r=$(rocm_apt_root) || die "ROCm $ROCM_APT geïnstalleerd, maar geen map met bin/hipcc + lib/libhipblas.so (find /opt -name hipcc)"
+  [ -f "$r/lib/cmake/hip-lang/hip-lang-config.cmake" ] || warn "$r mist lib/cmake/hip-lang: setup valt dan terug op de wheels"
+  ok "ROCm $ROCM_APT in $r ($(echo "${rp[*]}"))"
+else case "$ROCM_VERSION" in latest:*)
   v=$(resolve_rocm_version "$ROCM_VERSION")
   [ -n "$v" ] || die "geen ROCm ${ROCM_VERSION#latest:}.x gevonden op ${ROCM_INDEX:-de gfx110X-dgpu-index} (zet ROCM_VERSION= in $XTX_CONF op een exacte versie)"
   ROCM_VERSION=$v
   if grep -q '^ROCM_VERSION=' "$XTX_CONF"; then sed -i "s/^ROCM_VERSION=.*/ROCM_VERSION=$v   # vastgezet bij installatie (was latest:)/" "$XTX_CONF"
   else echo "ROCM_VERSION=$v" >> "$XTX_CONF"; fi
   ok "ROCm $v (nieuwste ${v%%.*}.x op de index, vastgezet in $XTX_CONF)" ;;
-esac
+esac; fi
 say "5/7 setup (ROCm, engine voor gfx1100, model) - de eerste keer 30-90 minuten"
 setup_args=(--backend hip --family "$FAMILY" --model "$MODEL" --context "$CONTEXT" --kv "$KV" --vision "$VISION"
             --data-dir "$DATA_DIR" --host "$HOST" --port "$PORT" --vram-reserve-mib "$VRAM_RESERVE_MIB"
@@ -94,6 +109,12 @@ if cfg=$(find_config) && [ -f "$STRATA_DIR/engine/BUILD.json" ]; then
   run_setup --update --no-start || die "setup --update mislukte"
 else
   run_setup --setup "${setup_args[@]}" || die "setup mislukte (log hierboven; opnieuw draaien gaat verder waar het stopte)"
+fi
+
+eng_rocm=$(jq -r '.lib_dirs[0] // empty' "$STRATA_DIR/engine/BUILD.json" 2>/dev/null)
+ok "engine gebouwd tegen: ${eng_rocm:-?}"
+if [ "$ROCM_SOURCE" = apt ] && [ -n "$eng_rocm" ] && [ "${eng_rocm#"$(rocm_apt_root)"}" = "$eng_rocm" ]; then
+  die "setup gebruikte niet de apt-ROCm $(rocm_apt_root) maar $eng_rocm (zie de waarschuwing van setup hierboven)"
 fi
 
 say "6/7 tuning-profiel $PROFILE"

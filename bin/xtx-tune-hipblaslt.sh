@@ -19,7 +19,7 @@ meta="$STRATA_DIR/engine/BUILD.json"
 [ -f "$meta" ] || die "geen engine/BUILD.json: eerst xtx-bootstrap"
 mapfile -t LIBS < <(jq -r '.lib_dirs[]' "$meta")
 ROOT=$(dirname "${LIBS[0]}")
-[ -x "$ROOT/llvm/bin/clang++" ] || die "ROCm-root niet gevonden ($ROOT)"
+[ -x "$ROOT/llvm/bin/clang++" ] || [ -x "$ROOT/lib/llvm/bin/clang++" ] || [ -x "$ROOT/bin/hipcc" ] || die "ROCm-root niet gevonden ($ROOT)"
 hdr="$ROOT/include/hipblaslt/hipblaslt-version.h"
 VER=$(awk '/HIPBLASLT_VERSION_MAJOR/{a=$3}/HIPBLASLT_VERSION_MINOR/{b=$3}/HIPBLASLT_VERSION_PATCH/{c=$3}END{if(a!="")printf "%d", a*100000+b*100+c}' "$hdr" 2>/dev/null)
 [ -n "$VER" ] || die "hipBLASLt-versie niet leesbaar uit $hdr"
@@ -30,7 +30,7 @@ LDP=$(IFS=:; echo "${LIBS[*]}")
 CMAKE=$( [ -x "$STRATA_DIR/.venv/bin/cmake" ] && echo "$STRATA_DIR/.venv/bin/cmake" || command -v cmake)
 
 say "tune_hipblaslt bouwen"
-( cd "$STRATA_DIR" && as_user env PATH="$ROOT/bin:$ROOT/llvm/bin:$STRATA_DIR/.venv/bin:$PATH" LD_LIBRARY_PATH="$LDP" \
+( cd "$STRATA_DIR" && as_user env PATH="$ROOT/bin:$ROOT/llvm/bin:$ROOT/lib/llvm/bin:$STRATA_DIR/.venv/bin:$PATH" LD_LIBRARY_PATH="$LDP" \
     HIP_PLATFORM=amd ROCM_PATH="$ROOT" HIP_PATH="$ROOT" \
     "$CMAKE" --build build-hip --target tune_hipblaslt -j "$(nproc)" ) || die "bouwen mislukte (is build-hip er nog? anders: xtx-update.sh --force)"
 TUNE="$STRATA_DIR/build-hip/tune_hipblaslt"

@@ -62,6 +62,8 @@ need=90; ls "$DATA_DIR"/models/*/*.gguf >/dev/null 2>&1 && need=20   # model al 
 avail=$(df -Pk "$DATA_DIR" | awk 'NR==2{print int($4/1048576)}'); [ "${avail:-0}" -ge $need ] || warn "minder dan ~$need GB vrij (model ±85 GB als het er nog niet is, ROCm + build ±15 GB)"
 
 say "software"
+if [ "$ROCM_SOURCE" = apt ]; then r=$(rocm_apt_root) && ok "ROCm $ROCM_APT (apt): $r" || ok "ROCm ${ROCM_APT:-latest} (apt): nog niet geïnstalleerd (doet de bootstrap)"
+else ok "ROCm: wheels in .venv (${ROCM_VERSION:-setup's standaard})"; fi
 for t in git gcc cmake ninja python3 curl jq; do command -v $t >/dev/null && ok "$t $($t --version 2>&1 | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)" || bad "$t ontbreekt (xtx-tools.sh)"; done
 if [ -d "$STRATA_DIR/.git" ]; then
   ok "Strata: $(git_s rev-parse --abbrev-ref HEAD) @ $(git_s log -1 --format='%h %cs')"

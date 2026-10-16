@@ -4,6 +4,7 @@ set -o pipefail
 
 XTX_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 XTX_NAME=strata-xtx; CMD_PREFIX=xtx; STRATA_DIR_DEFAULT=/opt/ai/strata; ROCM_VERSION_DEFAULT=; ROCM_INDEX_DEFAULT=; CONFLICTS=
+ROCM_SOURCE_DEFAULT=wheel; ROCM_APT_DEFAULT=
 # shellcheck disable=SC1091
 [ -f "$XTX_SELF_DIR/variant.env" ] && . "$XTX_SELF_DIR/variant.env"
 XTX_CONF="${XTX_CONF:-/etc/$XTX_NAME/xtx.conf}"
@@ -33,6 +34,11 @@ BUILD_JOBS=
 EXTRA_CMAKE_ARGS=
 ROCM_VERSION=$ROCM_VERSION_DEFAULT
 ROCM_INDEX=$ROCM_INDEX_DEFAULT
+ROCM_SOURCE=$ROCM_SOURCE_DEFAULT          # wheel = AMD's pip-wheels in .venv | apt = systeem-ROCm uit AMD's apt-repo
+ROCM_APT=$ROCM_APT_DEFAULT                # apt: 10.1, of latest (= nieuwste bij installatie, daarna vast)
+ROCM_APT_REPO=https://stable.repo.amd.com/rocm/core/packages/ubuntu2404/
+ROCM_APT_KEY=https://stable.repo.amd.com/rocm/gpg/packages.gpg
+GFX=gfx1100
 UPDATE_SMOKE_TIMEOUT=900
 UPGRADE_OS_PACKAGES=yes
 GIT_PPA=yes
@@ -75,8 +81,13 @@ setup_env() {   # de omgeving die setup.py meekrijgt
   local e=(LANG=C.UTF-8 PYTHONUNBUFFERED=1 HOME="$(getent passwd "$SERVICE_USER" | cut -d: -f6)" PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
   e+=(STRATA_BUILD_JOBS="${BUILD_JOBS:-$(nproc)}")
   [ -n "$EXTRA_CMAKE_ARGS" ] && e+=(STRATA_EXTRA_CMAKE_ARGS="$EXTRA_CMAKE_ARGS")
-  [ -n "$ROCM_VERSION" ] && e+=(STRATA_ROCM_VERSION="$ROCM_VERSION")
-  [ -n "$ROCM_INDEX" ] && e+=(STRATA_ROCM_INDEX="$ROCM_INDEX")
+  if [ "$ROCM_SOURCE" = apt ]; then   # setup gebruikt een systeem-ROCm via ROCM_PATH
+    local r; r=$(rocm_apt_root) && e+=(ROCM_PATH="$r")
+  else   # nooit per ongeluk een systeem-ROCm (/opt/rocm, bv. van de apt-variant) oppikken: altijd de wheels
+    e+=(ROCM_PATH=/var/empty/xtx-no-system-rocm)
+    [ -n "$ROCM_VERSION" ] && e+=(STRATA_ROCM_VERSION="$ROCM_VERSION")
+    [ -n "$ROCM_INDEX" ] && e+=(STRATA_ROCM_INDEX="$ROCM_INDEX")
+  fi
   printf '%s\n' "${e[@]}"
 }
 
@@ -154,4 +165,43 @@ vs = set(re.findall(r"rocm-(\d+\.\d+\.\d+(?:[a-z]+\d+)?)\.(?:tar\.gz|whl)", sys.
 key = lambda v: tuple(int(x or 0) for x in re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:[a-z]+(\d+))?", v).groups())
 vs = sorted((v for v in vs if v.split(".")[0] == major), key=key)
 print(vs[-1] if vs else "")' "${want#latest:}"
+}
+
+# --- ROCm uit AMD's apt-repo (ROCM_SOURCE=apt, bv. ROCm 10) ---
+rocm_apt_pkgs() {   # runtime + HIP-dev + hipBLAS/hipBLASLt (+ dev), alleen voor $GFX (niet het pakket voor alle kaarten)
+  printf '%s\n' "amdrocm-core-dev$1-$GFX" "amdrocm-blas$1-$GFX" "amdrocm-blas-dev$1"
+}
+
+rocm_apt_latest() {   # nieuwste X.Y waarvoor amdrocm-core-devX.Y-$GFX bestaat
+  apt-cache pkgnames amdrocm-core-dev 2>/dev/null | sed -n "s/^amdrocm-core-dev\([0-9][0-9.]*\)-$GFX\$/\1/p" | sort -V | tail -1
+}
+
+rocm_apt_repo() {   # AMD's apt-repo + sleutel toevoegen (idempotent)
+  local src=/etc/apt/sources.list.d/amdrocm-stable.sources key=/etc/apt/keyrings/amdrocm.gpg tmp
+  [ -s "$key" ] && [ -f "$src" ] && return 0
+  install -d -m 0755 /etc/apt/keyrings
+  tmp=$(mktemp); curl -fsSL -m 60 "$ROCM_APT_KEY" -o "$tmp" || { rm -f "$tmp"; return 1; }
+  if grep -q 'BEGIN PGP' "$tmp"; then gpg --dearmor --yes -o "$key" < "$tmp"; else cp "$tmp" "$key"; fi
+  rm -f "$tmp"; chmod 0644 "$key"
+  cat > "$src" <<EOS
+Types: deb
+URIs: $ROCM_APT_REPO
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: $key
+EOS
+  apt-get update -qq
+}
+
+rocm_apt_root() {   # de map van de geïnstalleerde ROCm $ROCM_APT met hipcc, libhipblas en HIP-cmake-bestanden
+  local major=${ROCM_APT%%.*} h d
+  for h in $(find /opt -maxdepth 5 -path '*/bin/hipcc' 2>/dev/null | sort -rV); do
+    d=$(dirname "$(dirname "$h")")
+    ls "$d"/lib/libhipblas.so* >/dev/null 2>&1 || continue
+    grep -qE "ROCM_VERSION_MAJOR[[:space:]]+$major\b" "$d/include/rocm-core/rocm_version.h" 2>/dev/null || continue
+    [ "$ROCM_APT" = "$major" ] || grep -qE "ROCM_VERSION_MINOR[[:space:]]+${ROCM_APT#*.}\b" "$d/include/rocm-core/rocm_version.h" || continue
+    readlink -f "$d"; return 0
+  done
+  return 1
 }
