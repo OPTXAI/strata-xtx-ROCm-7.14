@@ -27,6 +27,7 @@ PORT=8080
 API_KEY=
 PROFILE=xtx-max
 AUTO_TUNE=yes
+AUTO_CALIBRATE=yes
 VRAM_RESERVE_MIB=512
 MEMORY_LIMIT_MIB=auto
 RESIDENT_HEADROOM_GIB=
@@ -204,4 +205,18 @@ rocm_apt_root() {   # de map van de geïnstalleerde ROCm $ROCM_APT met hipcc, li
     readlink -f "$d"; return 0
   done
   return 1
+}
+
+need_calibrate() {   # 0 als setup voor dit model + deze context nog geen kalibratie bewaard heeft (~strata/.config/strata)
+  local cfg h; cfg=$(find_config) || return 1
+  h=$(getent passwd "$SERVICE_USER" | cut -d: -f6)
+  python3 - "$cfg" "$h/.config/strata/settings.json" <<'EOP'
+import json, sys
+cfg = json.load(open(sys.argv[1], encoding="utf-8-sig")); a = cfg.get("args", [])
+ctx = a[a.index("--max-context") + 1] if "--max-context" in a else "?"
+try: cal = json.load(open(sys.argv[2], encoding="utf-8")).get("calibration") or {}
+except (OSError, ValueError): cal = {}
+want = f"|{cfg.get('model_name', '?')}|{ctx}|"
+sys.exit(1 if any(want in k for k in cal) else 0)
+EOP
 }

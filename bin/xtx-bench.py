@@ -4,7 +4,7 @@
 Elke prompt begint met een unieke run-id, zodat niets uit de cache komt (cache_n wordt gecontroleerd). Tijden komen
 van de server zelf (timings / /v1/status last_timings), niet van de wandklok. Greedy, reasoning uit.
 
-  xtx-bench.py --label xtx --out results.jsonl [--sizes 4k,16k,32k] [--runs 3] [--decode 256]
+  xtx-bench.py --label xtx --out results.jsonl [--sizes 8k,32k,64k] [--runs 3] [--decode 256]
 """
 import argparse
 import json
@@ -61,13 +61,18 @@ def one(base, key, model, n_tokens, decode, seed):
             "finish": (r.get("choices") or [{}])[0].get("finish_reason")}
 
 
+def ktok(n):
+    """label = het echte aantal prompt-tokens (bv. 7.3K), niet de gevraagde grootte"""
+    return f"{(n or 0) / 1000:.1f}K"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default="http://127.0.0.1:" + os.environ.get("STRATA_PORT", "8080"))
     ap.add_argument("--key", default=os.environ.get("STRATA_API_KEY", ""))
     ap.add_argument("--label", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--sizes", default="4k,16k,32k")
+    ap.add_argument("--sizes", default="8k,32k,64k")
     ap.add_argument("--runs", type=int, default=3)
     ap.add_argument("--decode", type=int, default=256)
     a = ap.parse_args()
@@ -85,7 +90,7 @@ def main():
                 res = one(base, a.key, model, n, a.decode, 1000 * n + r)
                 res.update(label=a.label, size=n, run=r, at=int(time.time()))
                 flag = "" if not res["cache_n"] else "  (!! cache_n > 0: telt niet)"
-                print(f"[{a.label}] {n // 1024:>3}K run {r + 1}: prompt {res['prompt_n']} tok @ {res['prompt_tps']} tok/s, "
+                print(f"[{a.label}] {ktok(res['prompt_n']):>5} run {r + 1}: prompt {res['prompt_n']} tok @ {res['prompt_tps']} tok/s, "
                       f"decode {res['decode_n']} @ {res['decode_tps']} tok/s{flag}", flush=True)
                 f.write(json.dumps(res) + "\n")
                 rows.append(res)
@@ -94,7 +99,7 @@ def main():
         if ok:
             pm = statistics.median(r["prompt_tps"] for r in ok if r["prompt_tps"])
             dm = statistics.median(r["decode_tps"] for r in ok if r["decode_tps"])
-            print(f"[{a.label}] {n // 1024}K mediaan: prompt {pm:.0f} tok/s, decode {dm:.1f} tok/s (n={len(ok)})")
+            print(f"[{a.label}] {ktok(statistics.median(r['prompt_n'] for r in ok))} mediaan: prompt {pm:.0f} tok/s, decode {dm:.1f} tok/s (n={len(ok)})")
     return 0
 
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # strata-xtx: vergelijk tuning-profielen op deze machine (A/B, elke arm met een verse engine).
 #
-#   xtx-bench.sh [--sizes 4k,16k,32k] [--runs 3] [--rounds 2] PROFIEL [PROFIEL ...]
+#   xtx-bench.sh [--sizes 8k,32k,64k] [--runs 3] [--rounds 2] PROFIEL [PROFIEL ...]
 #   bv.  xtx-bench.sh stock xtx xtx-max
 #
 # Rondes wisselen de volgorde af (A B C, C B A, ...) tegen opwarm- en klokeffecten. Na afloop staat het profiel uit
 # xtx.conf (PROFILE) weer actief. Resultaten: /var/lib/strata-xtx/bench/<datum>/. Duur: ~5-10 min per arm per ronde.
 . "$(dirname "$(readlink -f "$0")")/xtx-lib.sh"
 need_root
-SIZES=4k,16k,32k; RUNS=3; ROUNDS=2; PROFILES=()
+SIZES=8k,32k,64k; RUNS=3; ROUNDS=2; PROFILES=()
 while [ $# -gt 0 ]; do
   case "$1" in --sizes) SIZES="$2"; shift ;; --runs) RUNS="$2"; shift ;; --rounds) ROUNDS="$2"; shift ;;
     -*) die "onbekende optie $1" ;; *) PROFILES+=("$1") ;; esac; shift
@@ -44,7 +44,8 @@ rows = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
 rows = [r for r in rows if not r.get("cache_n") and r.get("prompt_tps")]
 labels = list(dict.fromkeys(r["label"] for r in rows)); sizes = sorted({r["size"] for r in rows})
 base = labels[0] if labels else None
-print(f"{'profiel':<16}" + "".join(f"{str(s//1024)+'K prompt':>14}{'decode':>9}" for s in sizes))
+ktok = {s: f"{statistics.median(r['prompt_n'] for r in rows if r['size'] == s) / 1000:.1f}K" for s in sizes}
+print(f"{'profiel':<16}" + "".join(f"{ktok[s]+' prompt':>14}{'decode':>9}" for s in sizes))
 for L in labels:
     line = f"{L:<16}"
     for s in sizes:
@@ -55,6 +56,6 @@ for L in labels:
         rel = f" {100*(p/statistics.median(x['prompt_tps'] for x in b)-1):+.0f}%" if b and L != base else ""
         line += f"{p:>9.0f}{rel:>5}{d:>9.1f}"
     print(line)
-print(f"\n(% = prompt t.o.v. {base}; decode in tok/s. Verschillen onder ~3% zijn ruis.)")
+print(f"\n(K = echte prompt-tokens; % = prompt t.o.v. {base}; decode in tok/s. Verschillen onder ~3% zijn ruis.)")
 EOF
 ok "resultaten: $dir"

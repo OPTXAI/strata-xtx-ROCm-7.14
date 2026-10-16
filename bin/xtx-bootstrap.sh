@@ -6,11 +6,11 @@
 #   3. upstream clonen                7. systemd-service, starten, rooktest
 #   4. branch xtx = upstream + patches
 #
-# Opties: --no-start (alles behalve starten), --skip-check
+# Opties: --no-start (alles behalve starten), --skip-check, --no-tune, --no-calibrate
 . "$(dirname "$(readlink -f "$0")")/xtx-lib.sh"
 need_root
 NO_START=0; SKIP_CHECK=0
-for a in "$@"; do case "$a" in --no-start) NO_START=1 ;; --skip-check) SKIP_CHECK=1 ;; --no-tune) AUTO_TUNE=no ;; *) die "onbekende optie $a" ;; esac; done
+for a in "$@"; do case "$a" in --no-start) NO_START=1 ;; --skip-check) SKIP_CHECK=1 ;; --no-tune) AUTO_TUNE=no ;; --no-calibrate) AUTO_CALIBRATE=no ;; *) die "onbekende optie $a" ;; esac; done
 
 install -d -m 0755 "/etc/$XTX_NAME" "$LOG_DIR" "$STATE_DIR" "$STATE_DIR/hipblaslt"
 exec > >(tee -a "$LOG_DIR/bootstrap-$(date +%Y%m%d-%H%M%S).log") 2>&1
@@ -154,6 +154,12 @@ STOPPED=()   # gelukt: de andere variant blijft uit
 if [ "$AUTO_TUNE" = yes ] && need_tune; then
   say "8/8 eigen hipBLASLt-tabel (10-30 min; de service gaat even uit en daarna weer aan)"
   "$XTX_DIR/bin/xtx-tune-hipblaslt.sh" || warn "tunen mislukte - Strata draait wel, met de meegeleverde tabel (later: xtx-tune-hipblaslt)"
+fi
+if [ "$AUTO_CALIBRATE" = yes ] && need_calibrate; then
+  say "decode-kalibratie voor deze PC (15-30 min; de service gaat even uit en daarna weer aan)"
+  "$XTX_DIR/bin/xtx-calibrate.sh" || warn "kalibreren mislukte - Strata draait met de standaardinstellingen (later: xtx-calibrate)"
+elif [ "$AUTO_CALIBRATE" = yes ]; then
+  ok "decode-kalibratie voor dit model/deze context bestaat al (setup past ze toe; opnieuw: xtx-calibrate)"
 fi
 ip=$(hostname -I 2>/dev/null | awk '{print $1}')
 echo

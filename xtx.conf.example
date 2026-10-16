@@ -35,6 +35,7 @@ API_KEY=                                  # leeg = geen sleutel; vul iets in om 
 # --- tuning ------------------------------------------------------------------------------------------
 PROFILE=xtx-max                           # stock | xtx | xtx-max | xtx-decode-exp  (zie profiles/*.json)
 AUTO_TUNE=yes                             # eigen hipBLASLt-tabel maken bij installatie en na een ROCm-wissel
+AUTO_CALIBRATE=yes                        # Niko's decode-kalibratie (--calibrate) bij installatie, als die er nog niet is (15-30 min)
 VRAM_RESERVE_MIB=512                      # headless kaart: geen desktop, dus minder reserve dan de standaard 700
 # Geheugenplafond voor de engine. Proxmox-LXC ziet zijn eigen limiet vaak niet (upstream DETAILS.md: MemAvailable
 # 25 GiB terwijl er 1 GiB over was). auto = MemTotal van de container min 2 GiB; 0 = niet zetten.
