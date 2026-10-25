@@ -6,7 +6,7 @@
 # Draait de installatie los van deze terminal: sluit je de terminal, dan gaat hij door. Log in de container:
 # /var/log/xtx-install.log. Opnieuw uitvoeren is veilig.
 CT=${1:-}
-REPO=${XTX_REPO:-https://github.com/OPTXAI/strata-xtx-ROCm-7.14-0.1.49.2.git}
+REPO=${XTX_REPO:-https://github.com/OPTXAI/strata-xtx-ROCm-7.14.git}
 DIR=/opt/ai/strata-xtx-0149
 die() { echo "FOUT: $*" >&2; exit 1; }
 command -v pct >/dev/null 2>&1 || die "pct niet gevonden: dit script draait op de Proxmox-host"

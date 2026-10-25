@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # strata-xtx: één commando in een SCHONE container; installeert en meet alles zelf (als losse service 'xtx-install').
-#   apt-get update -qq && apt-get install -y -qq curl ca-certificates && curl -fsSL https://raw.githubusercontent.com/OPTXAI/strata-xtx-ROCm-7.14-0.1.49.2/HEAD/install.sh | bash
+#   apt-get update -qq && apt-get install -y -qq curl ca-certificates && curl -fsSL https://raw.githubusercontent.com/OPTXAI/strata-xtx-ROCm-7.14/HEAD/install.sh | bash
 # Voorwaarde: memlock van de container staat op unlimited (eenmalig op de host, zie host/set-memlock.sh).
 # Sluit je het venster, dan gaat de installatie door. Log: /var/log/xtx-install.log. Opnieuw uitvoeren is veilig.
 set -u
-REPO=https://github.com/OPTXAI/strata-xtx-ROCm-7.14-0.1.49.2.git
+REPO=https://github.com/OPTXAI/strata-xtx-ROCm-7.14.git
 DIR=/opt/ai/strata-xtx-0149
 LOG=/var/log/xtx-install.log
 die() { echo "FOUT: $*" >&2; exit 1; }
