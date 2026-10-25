@@ -1,0 +1,8 @@
+{
+ "description": "xtx-max plus STRATA_PF_F16=1 (gfx11: prompt-experts op de F16-matrixcores i.p.v. int8; dekt IQ3_S gate/up en IQ4_NL down). Gemeten op deze XTX met engine 0.1.45: prompt ongeveer +4% bij 29K/58K, decode gelijk. Rondt anders af dan xtx-max.",
+ "inherits": "xtx-max",
+ "env": {
+  "STRATA_PF_F16": "1"
+ },
+ "args": []
+}

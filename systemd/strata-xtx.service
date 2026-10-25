@@ -1,0 +1,29 @@
+[Unit]
+Description=Strata (Qwen3.8-Flash-Next) op RX 7900 XTX - strata-xtx
+After=network-online.target local-fs.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=strata
+Group=strata
+SupplementaryGroups=render video
+EnvironmentFile=/etc/strata-xtx/runtime.env
+WorkingDirectory=/opt/ai/strata
+ExecStart=/bin/sh -c 'exec "$STRATA_DIR/.venv/bin/python" "$STRATA_DIR/serve/server.py" --engine strata --config "$STRATA_CONFIG" --port "$STRATA_PORT"'
+# de engine page-lockt tientallen GB voor de GPU
+LimitMEMLOCK=infinity
+LimitNOFILE=1048576
+# bij stoppen geeft de engine zijn gepinde RAM vrij: dat duurt langer dan 10 s
+TimeoutStopSec=120
+TimeoutStartSec=60
+KillSignal=SIGTERM
+Restart=on-failure
+RestartSec=15
+# Geen MemoryHigh (upstream AMD_HIP.md: die telt de page cache mee en liet een 16K-prompt 8 minuten stilstaan).
+# Een plafond hoort in de LXC-config (memory:) en via --memory-limit-mib in het run-config.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
