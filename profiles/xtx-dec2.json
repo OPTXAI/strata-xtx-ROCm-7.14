@@ -1,0 +1,10 @@
+{
+ "description": "xtx-dec1 plus de decode-schakelaars die upstream 0.2.7 voor RDNA4 standaard aanzet: ATTN_MERGE_V2, TSUM, EXPDEC (upstream op een R9700, IQ3_S, engine 0.1.51: samen met LANECELL +3,5%, antwoord-md5 gelijk). Nog niet gemeten op deze machine.",
+ "inherits": "xtx-dec1",
+ "env": {
+  "STRATA_ATTN_MERGE_V2": "1",
+  "STRATA_TSUM": "1",
+  "STRATA_EXPDEC": "1"
+ },
+ "args": []
+}

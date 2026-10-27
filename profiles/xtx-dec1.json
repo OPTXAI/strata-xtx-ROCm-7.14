@@ -1,0 +1,10 @@
+{
+ "description": "xtx-max-f16-gdn plus drie decode-schakelaars uit upstream die gfx1100 niet standaard krijgt (src/core/arch_defaults.cpp zet ze alleen voor gfx1151/gfx12): activatie-q8_1 door de producent (QFUSE), bf16 GEMV 4 rijen per blok (MMVF_ROWS), decode-attentie 1 cel per thread (ATTN_LANECELL). Dezelfde drie gebruikte de fork Strata-rdna3-moe-offload-perf op een RX 7900 XTX. Nog niet gemeten op deze machine.",
+ "inherits": "xtx-max-f16-gdn",
+ "env": {
+  "STRATA_QFUSE": "1",
+  "STRATA_MMVF_ROWS": "1",
+  "STRATA_ATTN_LANECELL": "1"
+ },
+ "args": []
+}
