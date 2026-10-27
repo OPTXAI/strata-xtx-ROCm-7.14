@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # strata-xtx: kwaliteitscontrole van tuning-profielen (needle-test op 32K/128K + 6 codevragen met uitvoerbare tests).
 #
-#   xtx-quality.sh [--sizes 32k,128k] [--seeds 2] [PROFIEL ...]        standaard: stock xtx-optimaal
+#   xtx-quality.sh [--sizes 32k,128k] [--seeds 2] [PROFIEL ...]        standaard: xtx-max-f16-gdn xtx-optimaal
 #
 # Elk profiel krijgt een verse engine en dezelfde prompts. Na afloop staat het profiel uit xtx.conf (PROFILE) weer actief.
 # Resultaten: /var/lib/<naam>/quality/<datum>/. Duur: ~10 min per profiel.
@@ -12,7 +12,7 @@ while [ $# -gt 0 ]; do
   case "$1" in --sizes) SIZES="$2"; shift ;; --seeds) SEEDS="$2"; shift ;;
     -*) die "onbekende optie $1" ;; *) PROFILES+=("$1") ;; esac; shift
 done
-[ ${#PROFILES[@]} -ge 1 ] || PROFILES=(stock xtx-optimaal)
+[ ${#PROFILES[@]} -ge 1 ] || PROFILES=(xtx-max-f16-gdn xtx-optimaal)
 for p in "${PROFILES[@]}"; do [ -f "$XTX_DIR/profiles/$p.json" ] || die "geen profiel $p"; done
 
 dir="$STATE_DIR/quality/$(date +%Y%m%d-%H%M%S)"; install -d "$dir"

@@ -164,4 +164,4 @@ fi
 ip=$(hostname -I 2>/dev/null | awk '{print $1}')
 echo
 ok "Strata draait: http://${ip:-<lxc-ip>}:$PORT  (OpenAI: /v1, Anthropic: /v1/messages), profiel $PROFILE"
-ok "meten kan altijd met: $CMD_PREFIX-bench stock $PROFILE   (kwaliteit: $CMD_PREFIX-quality)"
+ok "meten kan altijd met: $CMD_PREFIX-bench xtx-max-f16-gdn $PROFILE   (kwaliteit: $CMD_PREFIX-quality)"

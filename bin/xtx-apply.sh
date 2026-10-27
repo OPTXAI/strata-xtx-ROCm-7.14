@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # strata-xtx: zet het profiel + de instellingen uit xtx.conf (opnieuw) op het run-config en herstart de service.
 #   xtx-apply.sh                 het PROFILE uit xtx.conf
-#   xtx-apply.sh stock           dit profiel, eenmalig (een volgende update/apply neemt weer xtx.conf)
-#   xtx-apply.sh stock --save    dit profiel, en ook in xtx.conf vastzetten
+#   xtx-apply.sh xtx-max-f16-gdn dit profiel, eenmalig (een volgende update/apply neemt weer xtx.conf)
+#   xtx-apply.sh xtx-max-f16-gdn --save  dit profiel, en ook in xtx.conf vastzetten
 #   xtx-apply.sh --no-restart    alleen het config schrijven
 . "$(dirname "$(readlink -f "$0")")/xtx-lib.sh"
 need_root

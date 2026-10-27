@@ -2,7 +2,7 @@
 # strata-xtx: vergelijk tuning-profielen op deze machine (A/B, elke arm met een verse engine).
 #
 #   xtx-bench.sh [--sizes 8k,32k,64k] [--runs 3] [--rounds 2] PROFIEL [PROFIEL ...]
-#   bv.  xtx-bench.sh stock xtx-optimaal
+#   bv.  xtx-bench.sh xtx-max-f16-gdn xtx-optimaal
 #
 # Rondes wisselen de volgorde af (A B C, C B A, ...) tegen opwarm- en klokeffecten. Na afloop staat het profiel uit
 # xtx.conf (PROFILE) weer actief. Resultaten: /var/lib/strata-xtx/bench/<datum>/. Duur: ~5-10 min per arm per ronde.
@@ -13,7 +13,7 @@ while [ $# -gt 0 ]; do
   case "$1" in --sizes) SIZES="$2"; shift ;; --runs) RUNS="$2"; shift ;; --rounds) ROUNDS="$2"; shift ;;
     -*) die "onbekende optie $1" ;; *) PROFILES+=("$1") ;; esac; shift
 done
-[ ${#PROFILES[@]} -ge 1 ] || PROFILES=(stock xtx-optimaal)
+[ ${#PROFILES[@]} -ge 1 ] || PROFILES=(xtx-max-f16-gdn xtx-optimaal)
 for p in "${PROFILES[@]}"; do [ -f "$XTX_DIR/profiles/$p.json" ] || die "geen profiel $p"; done
 
 dir="$STATE_DIR/bench/$(date +%Y%m%d-%H%M%S)"; install -d "$dir"

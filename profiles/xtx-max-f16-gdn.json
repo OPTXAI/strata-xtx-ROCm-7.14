@@ -1,8 +1,46 @@
 {
- "description": "xtx-max-f16 plus STRATA_GDN_CHUNKED=1 (gfx11: DeltaNet-recurrentie van de prompt in chunks van 16 op de matrixcores). Gemeten op deze XTX met engine 0.1.45: prompt +3,4% (7K) tot +9% (29-58K) t.o.v. xtx-max, decode gelijk. Niet bit-identiek; needle-test (32K/128K) en codevragen nog te doen voor dit het standaardprofiel wordt.",
- "inherits": "xtx-max-f16",
+ "description": "Vorige standaard (tot 27 okt 2026), samengevoegd uit xtx, xtx-max, xtx-max-f16 en xtx-max-f16-gdn. Vergelijkingsarm voor xtx-optimaal: dezelfde instellingen zonder de decode-schakelaars QFUSE, MMVF_ROWS, ATTN_LANECELL, ATTN_MERGE_V2, TSUM, EXPDEC en SPEC_COST. Gemeten op deze XTX (engine 0.1.49.2, ROCm 7.14): decode-mediaan 86,0 tok/s (12 runs), kwaliteit 18/18.",
  "env": {
-  "STRATA_GDN_CHUNKED": "1"
+  "STRATA_ADAPT_LAG": "2",
+  "STRATA_CVEC_FUSE": "1",
+  "STRATA_GDN_CHUNKED": "1",
+  "STRATA_GDN_CONVL2": "1",
+  "STRATA_GDN_HEAD": "1",
+  "STRATA_GDN_NOY": "1",
+  "STRATA_GDN_PP": "2",
+  "STRATA_HC_UPMIX": "1",
+  "STRATA_HIP_WMMA": "1",
+  "STRATA_PA_FAST": "1",
+  "STRATA_PF_F16": "1",
+  "STRATA_PF_FUSED": "1",
+  "STRATA_PF_GEMM": "1",
+  "STRATA_PF_PAD": "1",
+  "STRATA_PF_SWITCH_MIN_T": "4096"
  },
- "args": []
+ "args": [
+  [
+   "--prefill",
+   "auto:32768"
+  ],
+  [
+   "--conversation-cache-mib",
+   "8192"
+  ],
+  [
+   "--adapt-async",
+   "1"
+  ],
+  [
+   "--pcie-frac",
+   "0.20"
+  ],
+  [
+   "--spec-min-p",
+   "0.50"
+  ],
+  [
+   "--pool-workers",
+   "10"
+  ]
+ ]
 }
