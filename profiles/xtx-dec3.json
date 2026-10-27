@@ -1,8 +1,0 @@
-{
- "description": "xtx-dec2 plus STRATA_SPEC_COST=1: upstream's kostgebaseerde MTP-venster (venstergrootte op tokens per ms van deze machine). De fork mat een eigen versie hiervan (--spec-policy cost): +1% tot +5%. Alleen de venstergrootte verandert. Nog niet gemeten op deze machine.",
- "inherits": "xtx-dec2",
- "env": {
-  "STRATA_SPEC_COST": "1"
- },
- "args": []
-}

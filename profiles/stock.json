@@ -1,5 +1,0 @@
-{
- "description": "Upstream zoals setup het schrijft. Alleen de LXC-veiligheid uit xtx.conf (VRAM-reserve, geheugenplafond) en een eigen hipBLASLt-tabel als die er is. Controlearm voor xtx-bench.",
- "env": {},
- "args": []
-}

@@ -1,8 +1,0 @@
-{
- "description": "xtx-max-f16 plus STRATA_GDN_CHUNKED=1 (gfx11: DeltaNet-recurrentie van de prompt in chunks van 16 op de matrixcores). Gemeten op deze XTX met engine 0.1.45: prompt +3,4% (7K) tot +9% (29-58K) t.o.v. xtx-max, decode gelijk. Niet bit-identiek; needle-test (32K/128K) en codevragen nog te doen voor dit het standaardprofiel wordt.",
- "inherits": "xtx-max-f16",
- "env": {
-  "STRATA_GDN_CHUNKED": "1"
- },
- "args": []
-}
