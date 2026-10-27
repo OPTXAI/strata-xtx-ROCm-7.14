@@ -127,7 +127,7 @@ def unknown_switches(strata_dir: Path, names) -> list:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
-    ap.add_argument("--profile", default="xtx")
+    ap.add_argument("--profile", default="xtx-optimaal")
     ap.add_argument("--profiles-dir", default=str(HERE.parent / "profiles"))
     ap.add_argument("--strata-dir", default="")
     ap.add_argument("--vram-reserve-mib", default="")

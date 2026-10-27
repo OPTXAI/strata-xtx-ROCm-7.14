@@ -10,7 +10,7 @@ dus de gesprekscache helpt niet tussen gevallen (cache_n wordt bijgehouden en ge
           Goed = de functie uit het antwoord haalt alle testgevallen. De code van het model draait lokaal met python3 -I,
           in een tijdelijke map, met 10 s tijdslimiet.
 
-  xtx-quality.py --label xtx-max --out results.jsonl [--sizes 32k,128k] [--seeds 2] [--context 262144]
+  xtx-quality.py --label xtx-optimaal --out results.jsonl [--sizes 32k,128k] [--seeds 2] [--context 262144]
 """
 import argparse
 import json
